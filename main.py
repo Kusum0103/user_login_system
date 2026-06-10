@@ -1,43 +1,35 @@
-import sys
+from flask import Flask, render_template , request, jsonify, session, redirect, url_for
 import mysql.connector
+import os
 from database import get_db_connection
-from auth import is_valid_email, check_password_strength, check_username_exists, register_user 
+from auth import is_valid_email, check_password_strength,check_username_exists, register_user, verify_user_login
 
-def main() :
-    mydb = get_db_connection()
-    if not mydb:
-        print("Error: Could not connect to database. Please check your connection and try again")
-        sys.exit() 
-    cursor = mydb.cursor(buffered=True)
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
-    username = input("Enter username: ")
-    email = input("Enter email: ")
-    password = input("Enter password: ")
-    confirm_password = input("Confirm password: ")
+@app.route('/')
+def home():
+    if 'username' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('index.html')
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    confirm_password = request.form.get('confirm_password', '')
+    if not username or not email or not password or not confirm_password :
+        return jsonify({'success' : False, 'error': "All fields are required."}), 400
     if not is_valid_email(email):
-        print("Error: Invalid email format.")
-        sys.exit()
+        return jsonify({'success' : False, 'error': "Invalid Email Address."}), 400
 
-    is_strong, password_strength_message = check_password_strength(password)
+    is_strong,password_strength_message = check_password_strength(password)
     if not is_strong:
-        print("Error:Password does not meet complexity requirement.")
-        print(password_strength_message)
-        sys.exit()
-  
+        return jsonify({'success' : False, 'error': password_strength_message}), 400
+
     if password != confirm_password:
-        print("Error: Passwords do not match.")
-        sys.exit()
+        return jsonify({'success': False, 'error': 'Passwords do not match.'}), 400
+
     
-    if check_username_exists(cursor, username):
-        print("Error: Username already exists.")
-        sys.exit()
-    try:
-        register_user(mydb,cursor,username,email,password)
-        print("Registration successful!")
-    except mysql.connector.Error as e:
-        print("An Error occured during SignUp:", e)
-    finally: 
-           cursor.close()
-           mydb.close()
-if __name__ == "__main__":
-    main()  
+    
