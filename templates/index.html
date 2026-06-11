@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Access Gateway</title>
+    <meta name="description" content="Secure login and registration system.">
+
+    <link rel="stylesheet" href="../static/css/style.css">
+
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> -->
+
+
+    <script src="../static/js/main.js" defer></script>
+
+    <!-- <script src="{{ url_for('static', filename='js/main.js') }}" defer></script> -->
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+
+            <div class="tabs">
+                <button type="button" class="tab-btn active" id="login-tab" onclick="switchTab('login')">Login</button>
+                <button type="button" class="tab-btn" id="register-tab"
+                    onclick="switchTab('register')">Register</button>
+            </div>
+
+            <div id="message-box" class="message-box"></div>
+
+            <div class="form-container">
+                <!-- Login Form -->
+                <form id="login-form" onsubmit="handleAuth(event, '/login')">
+                    <div class="form-group">
+                        <label for="login-username">Username</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="login-username" name="username" required
+                                placeholder="Enter your username">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="login-password" name="password" required
+                                placeholder="Enter your password">
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Access Account</button>
+                </form>
+
+                <!-- Registration Form -->
+                <form id="register-form" class="hidden" onsubmit="handleAuth(event, '/register')">
+                    <div class="form-group">
+                        <label for="register-username">Username</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="register-username" name="username" required
+                                placeholder="Choose a username">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email Address</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="register-email" name="email" required
+                                placeholder="Enter your email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="register-password" name="password" required
+                                placeholder="Min. 8 chars, 1 uppercase, 1 special">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="register-confirm">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="register-confirm" name="confirm_password" required
+                                placeholder="Repeat your password">
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
