@@ -1,0 +1,35 @@
+<div class="sidebar-card">
+    <div class="avatar-glow">
+        {{ username[0].upper() }}
+    </div>
+    <h1 class="welcome-title"> Welcome, {{ username }}! </h1>
+    <div class="user-status">
+        <span class="status-dot"></span>
+        <span>Session Securely Connected</span>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat-item">
+            <span class="stat-label">Device:</span>
+            <span class="stat-value">{{ device_info }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Logins (24h):</span>
+            <span class="stat-value">{{ login_count_24h }}</span>
+        </div>
+    </div>
+
+    <div class="active-users-panel">
+        <h3 class="active-users-title">Active Users</h3>
+        <div class="active-users-list">
+            {% for user in active_users %}
+            <div class="active-user-item">
+                <span class="active-dot"></span>
+                <span class="active-username">{{ user }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <a href="/logout" class="logout-btn">LOG OUT</a>
+</div>

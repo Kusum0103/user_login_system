@@ -1,0 +1,26 @@
+<div id="interview-results-state" class="interview-state hidden">
+    <h2 class="section-title">Interview Performance Review</h2>
+
+    <div class="result-summary-card">
+        <div class="score-container">
+            <span class="score-label">Overall Score</span>
+            <div class="score-circle-glow">
+                <span id="result-score-value">0</span><span class="score-total">/50</span>
+            </div>
+        </div>
+
+        <div class="status-container">
+            <span class="status-label">Placement Status</span>
+            <span id="result-status-badge" class="badge-status badge-practice">Needs Practice</span>
+        </div>
+    </div>
+
+    <div class="feedback-box">
+        <h3 class="feedback-title">AI Examiner Feedback</h3>
+        <div id="result-feedback-text" class="feedback-content">
+            Feedback details will appear here...
+        </div>
+    </div>
+
+    <button class="submit-btn" onclick="resetInterview()">Start New Interview</button>
+</div>

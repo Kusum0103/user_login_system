@@ -1,0 +1,35 @@
+<div id="interview-setup-state" class="interview-state active">
+    <h2 class="section-title">Configure Your Mock Interview</h2>
+    <p class="section-desc">Select your topic, difficulty, and number of questions to start.</p>
+
+    <div class="form-group">
+        <label for="interview-domain">Select Topic / Domain</label>
+        <select id="interview-domain" class="form-select">
+            <option value="Object-Oriented Programming (OOPs)">Object-Oriented Programming (OOPs)</option>
+            <option value="Python Programming" selected>Python Programming</option>
+            <option value="Data Structures & Algorithms (DSA)">Data Structures & Algorithms (DSA)</option>
+            <option value="Database Management Systems (DBMS)">Database Management Systems (DBMS)</option>
+            <option value="Operating Systems (OS)">Operating Systems (OS)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="interview-difficulty">Select Difficulty</label>
+        <select id="interview-difficulty" class="form-select">
+            <option value="Easy">Easy</option>
+            <option value="Intermediate" selected>Medium / Intermediate</option>
+            <option value="Hard">Hard</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="interview-question-count">Number of Questions</label>
+        <select id="interview-question-count" class="form-select">
+            <option value="1">1 Question (Quick Practice)</option>
+            <option value="3" selected>3 Questions (Standard)</option>
+            <option value="5">5 Questions (Detailed Interview)</option>
+        </select>
+    </div>
+
+    <button class="submit-btn" onclick="startInterview()">Start Mock Interview</button>
+</div>

@@ -1,0 +1,41 @@
+<!-- Modal for Detailed History Review (Floating over page, hidden by default) -->
+<div id="history-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2 id="modal-title" class="modal-heading">Interview Review</h2>
+            <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="result-summary-card">
+                <div class="score-container">
+                    <span class="score-label">Overall Score</span>
+                    <div class="score-circle-glow small">
+                        <span id="modal-score-value">0</span><span class="score-total">/50</span>
+                    </div>
+                </div>
+
+                <div class="status-container">
+                    <span class="status-label">Placement Status</span>
+                    <span id="modal-status-badge" class="badge-status">Needs Practice</span>
+                </div>
+            </div>
+
+            <div class="modal-scroll-area">
+                <div class="qa-history-section">
+                    <h3>Transcript (Questions & Answers)</h3>
+                    <div id="modal-qa-list" class="modal-qa-list">
+                        <!-- Q&As dynamic javascript injection -->
+                    </div>
+                </div>
+
+                <div class="feedback-box">
+                    <h3>Detailed AI Examiner Feedback</h3>
+                    <div id="modal-feedback-text" class="feedback-content">
+                        Feedback details will appear here...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

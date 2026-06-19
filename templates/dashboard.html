@@ -5,57 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
-    <meta name="description" content=" Secure User Dashboard">
-    <!-- <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}"> -->
+    <meta name="description" content="Secure User Dashboard">
     <link rel="stylesheet" href="../static/css/style.css">
-
 </head>
 
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="dashboard-content">
-                <div class="avatar-glow">
-                    {{ username[0].upper() }}
-                </div>
-                <h1 class="welcome-title"> Welcome , {{username}}! </h1>
+    <div class="dashboard-grid">
 
-                <div class="user-status">
+        <!-- Left Sidebar Section -->
+        {% include 'partials/sidebar.html' %}
 
-                    <span class="status-dot"></span>
-                    <span>Session Securely Connected</span>
-                </div>
-                <!-- Device aur Login stats dikhane ke liye panel -->
-                <div class="stats-panel">
-                    <div class="stat-item">
-                        <span class="stat-label">Device:</span>
-                        <span class="stat-value">{{ device_info }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Logins (24h):</span>
-                        <span class="stat-value">{{ login_count_24h }}</span>
-                    </div>
-                </div>
-                <!-- Active Users Panel -->
-                <div class="active-users-panel">
-                    <h3 class="active-users-title">Active Users</h3>
-                    <div class="active-users-list">
-                        {% for user in active_users %}
-                        <div class="active-user-item">
-                            <span class="active-dot"></span>
-                            <span class="active-username">{{ user }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+        <!-- Right Main Panel Section -->
+        <div class="main-card">
 
-
-                <a href="/logout" class="logout-btn">LOG OUT</a>
-
+            <!-- Dashboard Tab Bar -->
+            <div class="dashboard-tabs">
+                <button id="btn-tab-interview" class="tab-link active" onclick="switchDashboardTab('interview')">Start
+                    Mock Interview</button>
+                <button id="btn-tab-history" class="tab-link" onclick="switchDashboardTab('history')">Interview
+                    History</button>
             </div>
-        </div>
 
+            <!-- Tab Pane 1: Mock Interview with 3 States -->
+            <div id="content-interview" class="tab-content active">
+                {% include 'partials/interview_setup.html' %}
+                {% include 'partials/interview_active.html' %}
+                {% include 'partials/interview_results.html' %}
+            </div>
+
+            <!-- Tab Pane 2: History List Container -->
+            {% include 'partials/interview_history.html' %}
+
+        </div>
     </div>
+
+    <!-- Floating Popup Details Modal -->
+    {% include 'partials/history_modal.html' %}
 </body>
 
 </html>
