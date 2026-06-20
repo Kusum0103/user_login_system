@@ -1,6 +1,9 @@
 <div id="interview-active-state" class="interview-state hidden">
     <div class="interview-header">
         <span id="question-progress" class="badge">Question 1 of 3</span>
+
+        <span id="question-timer" class="badge badge-timer">Time Left: 120s</span>
+    
     </div>
 
     <div class="question-box">
@@ -13,5 +16,10 @@
             rows="8"></textarea>
     </div>
 
-    <button id="submit-answer-btn" class="submit-btn" onclick="submitAnswer()">Submit Answer</button>
+    <div class="interview-actions" style="display: flex; gap: 12px; margin-top: 10px;">
+        <button id="submit-answer-btn" class="submit-btn" style="margin-top: 0;" onclick="submitAnswer()">Submit Answer</button>
+        <button id="quit-interview-btn" class="quit-btn" style="margin-top: 0;" onclick="confirmQuitInterview()">Quit Interview</button>
+    </div>
+
+    <!-- <button id="submit-answer-btn" class="submit-btn" onclick="submitAnswer()">Submit Answer</button> -->
 </div>

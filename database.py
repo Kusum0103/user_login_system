@@ -26,10 +26,31 @@ def init_db():
             username VARCHAR(255) NOT NULL UNIQUE,
             email VARCHAR(255) NOT NULL,
             password VARCHAR(255) NOT NULL,
-            is_active TINYINT(1) DEFAULT 0
+            is_active TINYINT(1) DEFAULT 0,
+            is_verified TINYINT(1) DEFAULT 0,
+            otp_code VARCHAR(6) DEFAULT NULL,
+            otp_expiry TIMESTAMP DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """)
-        
+
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN is_verified TINYINT(1) DEFAULT 0")
+        except mysql.connector.Error:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN otp_code VARCHAR(6) DEFAULT NULL")
+        except mysql.connector.Error:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN otp_expiry TIMESTAMP DEFAULT NULL")
+        except mysql.connector.Error:
+            pass
+
+              
+    
+
         #login logs table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS login_logs (

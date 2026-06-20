@@ -85,7 +85,7 @@ def login():
     if not username or not password:
         return jsonify({'success': False, 'error': 'Username and Password are required.'}), 400
     
-    success, message = verify_user_login(cursor, username, password)
+    success, message = verify_user_login( username, password)
     if not success:
            return jsonify({'success': False, 'error': message}), 401
     user_id = get_user_id_by_username(username)       
@@ -179,7 +179,8 @@ def generate_question():
 
                 }
             ], 
-            model = "llama3-8b-8192",
+            model = "llama-3.1-8b-instant",
+
         ) 
         question = chat_completion.choices[0].message.content.strip()
         return jsonify({'success': True,'question' : question})

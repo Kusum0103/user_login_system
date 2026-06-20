@@ -1,85 +1,4 @@
-function switchTab(mode) {
-    const loginTab = document.getElementById("login-tab")
-
-    const registerTab = document.getElementById("register-tab")
-
-    const loginForm = document.getElementById("login-form")
-
-    const registerForm = document.getElementById("register-form")
-
-    const messageBox = document.getElementById("message-box")
-
-    messageBox.style.display = "none"
-
-    if (mode === "login") {
-        loginTab.classList.add("active");
-        registerTab.classList.remove("active");
-        loginForm.classList.remove("hidden");
-        registerForm.classList.add("hidden");
-    } else {
-        registerTab.classList.add("active");
-        loginTab.classList.remove("active");
-        registerForm.classList.remove("hidden");
-        loginForm.classList.add("hidden");
-    }
-}
-
-async function handleAuth(event, endpoint) {
-    event.preventDefault();
-
-    const form = event.target;
-
-
-    const formData = new FormData(form);
-
-
-    const messageBox = document.getElementById("message-box");
-
-    messageBox.style.display = "none";
-    messageBox.className = "message-box";
-
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-            messageBox.textContent = data.message;
-            messageBox.classList.add("success");
-            messageBox.style.display = "block";
-
-            if (endpoint === '/login') {
-                setTimeout(() => {
-                    window.location.href = "/dashboard";
-                }, 1000);
-            }
-            else {
-
-                setTimeout(() => {
-                    form.reset();
-                    switchTab("login");
-                }, 2000);
-            }
-        }
-        else {
-            messageBox.textContent = data.error || "Something went wrong!! Try again";
-            messageBox.classList.add("error");
-            messageBox.style.display = "block";
-        }
-
-    }
-    catch (error) {
-        messageBox.textContent = "Could not connect to the server. Please check your internet connection.";
-        messageBox.classList.add("error");
-        messageBox.style.display = "block";
-        console.error("Error during authentication:", error);
-    }
-
-}
-
+// Global Session state for Interview
 let interviewSession = {
     domain: '',
     difficulty: '',
@@ -88,6 +7,9 @@ let interviewSession = {
     qaPairs: [],
     loadedHistory: []
 };
+let timerInterval; // Countdown timer ko control karne ke liye tracker
+
+// Dashboard tabs switch karne ke liye 
 
 function switchDashboardTab(tab) {
     const tabInterview = document.getElementById("btn-tab-interview");
@@ -98,30 +20,39 @@ function switchDashboardTab(tab) {
     if (tab === "interview") {
         tabInterview.classList.add("active");
         tabHistory.classList.remove("active");
-        contentInterview.classList.remove("hidden");
-        contentHistory.classList.add("hidden");
+
+        contentInterview.classList.add("active");
+        contentHistory.classList.remove("active");
     } else {
         tabHistory.classList.add("active");
         tabInterview.classList.remove("active");
-        contentHistory.classList.remove("hidden");
-        contentInterview.classList.add("hidden");
+        contentHistory.classList.add("active");
+        contentInterview.classList.remove("active");
+
         fetchHistory();
     }
 }
+
+
+
+// Mock Interview start karne ke liye
 function startInterview() {
-    // 1. Options le lenge
+
+    interviewSession.isActive = true;
     interviewSession.domain = document.getElementById("interview-domain").value;
     interviewSession.difficulty = document.getElementById("interview-difficulty").value;
     interviewSession.totalQuestions = parseInt(document.getElementById("interview-question-count").value);
 
-
     document.getElementById("interview-setup-state").classList.add("hidden");
     document.getElementById("interview-active-state").classList.remove("hidden");
 
-
     loadQuestion();
 }
+
+// Backend AI se question load karne ke liye
 async function loadQuestion() {
+
+    clearInterval(timerInterval);
     const questionTextEl = document.getElementById("current-question-text");
     const progressEl = document.getElementById("question-progress");
     const answerTextArea = document.getElementById("user-answer");
@@ -138,7 +69,6 @@ async function loadQuestion() {
     const previous_questions = interviewSession.qaPairs.map(pair => pair.question);
 
     try {
-        // Backend `/generate-question` API call karna
         const response = await fetch('/generate-question', {
             method: 'POST',
             headers: {
@@ -154,11 +84,25 @@ async function loadQuestion() {
         const data = await response.json();
 
         if (response.ok && data.success) {
-            // Question show karna aur input unlock karna
             questionTextEl.textContent = data.question;
             answerTextArea.disabled = false;
             submitBtn.disabled = false;
             answerTextArea.focus();
+
+            let secondsLeft = 120;
+            const timerEl = document.getElementById("question-timer");
+            timerEl.textContent = `Time Left: ${secondsLeft}s`;
+            timerInterval = setInterval(() => {
+                secondsLeft--;
+                timerEl.textContent = `Time Left: ${secondsLeft}s`;
+                if (secondsLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitAnswer(true);
+                }
+            }, 1000);
+
+
+
         } else {
             questionTextEl.textContent = "Error: " + (data.error || "Failed to load question.");
         }
@@ -167,40 +111,40 @@ async function loadQuestion() {
         console.error("Fetch question error:", err);
     }
 }
-// 1. Current answer ko check aur submit karne ka function
-async function submitAnswer() {
-    const answerTextArea = document.getElementById("user-answer");
-    const userAnswer = answerTextArea.value.trim();
 
-    // Verification: Agar answer khali (empty) hai, toh user ko alert do
+async function submitAnswer(isAutoSubmit = false) {
+    const answerTextArea = document.getElementById("user-answer");
+    let userAnswer = answerTextArea.value.trim();
+
     if (!userAnswer) {
-        alert("Please write an answer before submitting.");
-        return;
+        if (isAutoSubmit) {
+            userAnswer = "No answer provided (Time limit reached).";
+        } else {
+            showCustomAlert("Please write an answer before submitting.");
+            return;
+        }
     }
+    clearInterval(timerInterval);
+
 
     const currentQuestionText = document.getElementById("current-question-text").textContent;
 
-    // Answer aur Question ko humare session memory (qaPairs) mein daalna
     interviewSession.qaPairs.push({
         question: currentQuestionText,
         answer: userAnswer
     });
 
-    // Question counter ko aage badhana
     interviewSession.currentQuestionIndex++;
 
-    // Check karna: Kya abhi aur questions bache hain?
     if (interviewSession.currentQuestionIndex < interviewSession.totalQuestions) {
-        // Agar bache hain, toh agla sawaal load karo
         loadQuestion();
     } else {
-        // Agar saare questions ho gaye, toh screen badal kar "Results Screen" dikhao
+        interviewSession.isActive = false;
         document.getElementById("interview-active-state").classList.add("hidden");
 
         const resultsState = document.getElementById("interview-results-state");
         resultsState.classList.remove("hidden");
 
-        // Loader Text set karna jab tak AI check kar raha hai
         document.getElementById("result-score-value").textContent = "...";
         document.getElementById("result-feedback-text").innerHTML = "<p>AI is evaluating your responses. This may take 10-15 seconds...</p>";
 
@@ -209,7 +153,6 @@ async function submitAnswer() {
         statusBadge.className = "badge-status";
 
         try {
-            // Backend API '/evaluate-interview' ko final request bhejna
             const response = await fetch('/evaluate-interview', {
                 method: 'POST',
                 headers: {
@@ -225,13 +168,8 @@ async function submitAnswer() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Score out of 50 screen par print karna
                 document.getElementById("result-score-value").textContent = data.score || "N/A";
-
-                // Feedback text ko format karke dikhana (\n ko line break <br> banana)
                 document.getElementById("result-feedback-text").innerHTML = data.evaluation.replace(/\n/g, "<br>");
-
-                // Status ke according green/yellow/red color classes apply karna
                 statusBadge.textContent = data.status;
 
                 switch (data.status) {
@@ -254,20 +192,68 @@ async function submitAnswer() {
     }
 }
 
-// 2. Interview ko wapas shuru se reset karne ka function 
+// Interview reset karne ke liye
 function resetInterview() {
+    clearInterval(timerInterval);
     interviewSession = {
         domain: "Object-Oriented Programming (OOPs)",
         difficulty: "Easy",
         totalQuestions: 5,
         currentQuestionIndex: 0,
         qaPairs: [],
-        qaSession: false
+        qaSession: false,
+        isActive: false
     };
 
-    // Sabhi text area ko clear karna aur setup form wapas dikhana
     document.getElementById("user-answer").value = "";
     document.getElementById("interview-results-state").classList.add("hidden");
     document.getElementById("interview-active-state").classList.add("hidden");
     document.getElementById("interview-setup-state").classList.remove("hidden");
 }
+
+window.addEventListener("blur", () => {
+
+    if (interviewSession && interviewSession.isActive) {
+        interviewSession.isActive = false;
+        showCustomAlert("Anti-Cheat Alert: You switched tabs or minimized the window during the interview. Your exam has been terminated!");
+        resetInterview();
+    }
+});
+
+function confirmQuitInterview() {
+    const isSure = showCustomConfirm("Are you sure you want to quit the interview? All progress in this session will be lost.", () => {
+        resetInterview();
+
+    });
+
+}
+
+let confirmCallback = null;
+
+
+function showCustomAlert(message) {
+    document.getElementById("custom-alert-message").textContent = message;
+    document.getElementById("custom-alert-modal").classList.remove("hidden");
+}
+
+
+function closeCustomAlert() {
+    document.getElementById("custom-alert-modal").classList.add("hidden");
+}
+
+
+function showCustomConfirm(message, callback) {
+    document.getElementById("custom-confirm-message").textContent = message;
+    confirmCallback = callback;
+    document.getElementById("custom-confirm-modal").classList.remove("hidden");
+}
+
+
+function closeCustomConfirm(isConfirmed) {
+    document.getElementById("custom-confirm-modal").classList.add("hidden");
+    if (isConfirmed && confirmCallback) {
+        confirmCallback();
+    }
+    confirmCallback = null;
+}
+
