@@ -92,7 +92,7 @@ def register_user(username, email, password):
         hashed_password = bcrypt.hashpw(password_bytes, salt)
         hashed_password_str = hashed_password.decode('utf-8')
         
-        insert_query = "INSERT INTO users(username, email, password) VALUES (%s, %s, %s)"
+        insert_query = "INSERT INTO users(username, email, password, is_verified) VALUES (%s, %s, %s, 1)"
         cursor.execute(insert_query, (username, email, hashed_password_str)) 
         db.commit()  
         return True
@@ -128,3 +128,112 @@ def verify_user_login(username, password):
     finally:
         cursor.close()
         db.close()
+
+from datetime import datetime
+def save_otp(username, otp , expiry_time):
+    db = get_db_connection()
+    if not db:
+        return False
+    try:
+        cursor = db.cursor()
+        query = "UPDATE users SET otp_code = %s, otp_expiry = %s WHERE username = %s"
+        cursor.execute(query, (otp, expiry_time, username))  
+        db.commit()
+        return True
+    except mysql.connector.Error as e:
+        print("Database error in save_otp:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+def verify_otp_in_db(username , otp):
+    db = get_db_connection()
+    if not db :
+        return False , "Database connection failed"
+    try:
+        cursor = db.cursor()
+        query = "SELECT otp_code , otp_expiry FROM users WHERE username = %s"
+        cursor.execute(query , (username,))
+        result = cursor.fetchone()
+        if not result or not result [0]:
+            return False , "Invalid OTP. No OTP record found for this user."
+        
+        db_otp , db_expiry = result[0], result [1]
+        
+        if db_otp != otp :
+            return False , "Invalid OTP. Does not match."
+        
+        if datetime.now()> db_expiry:
+            return False, "OTP expired. Please request a new one."
+        
+       
+
+        update_query = """ UPDATE users SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE username = %s"""
+        cursor.execute(update_query , (username,))  
+        db.commit()
+        return True, "OTP verified successfully"
+
+    except mysql.connector.Error as e:
+        print("Database error in verify_otp_in_db:", e)
+        return False , f"Database error: {str(e)}"
+    finally:
+        cursor.close()
+        db.close()
+
+def is_user_verified(username):
+    db = get_db_connection()
+    if not db :
+        return False
+
+    try:
+        cursor = db.cursor()
+        query = "SELECT is_verified FROM users WHERE username = %s"
+        cursor.execute(query , (username,))
+        result = cursor.fetchone()
+
+        return result[0] if result else False
+
+    except mysql.connector.Error as e:
+        print("Database error in is_user_verified:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+def get_user_email(username):
+    db = get_db_connection()
+    if not db:
+        return None
+    try:
+        cursor = db.cursor()
+        query = "SELECT email FROM users WHERE username = %s"
+        cursor.execute(query, (username,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except mysql.connector.Error as e:
+        print("Database error in get_user_email:", e)
+        return None
+    finally:
+        cursor.close()
+        db.close()
+        
+
+
+def delete_user_account(username):
+    db = get_db_connection()
+    if not db:
+        return False
+    try:
+        cursor = db.cursor()
+        query = "DELETE FROM users WHERE username = %s"
+        cursor.execute(query, (username,))
+        db.commit()
+        return True
+    except mysql.connector.Error as e:
+        print("Database error in delete_user_account:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+        

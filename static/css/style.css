@@ -239,6 +239,7 @@ body {
     margin-bottom: 8px;
     background: linear-gradient(135deg, #ffffff, #F3E3D0);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -892,4 +893,32 @@ body {
 
 .quit-btn:active {
     transform: translateY(0);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    user-select: none;
+    font-size: 1.1rem;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.password-toggle:hover {
+    opacity: 1;
+}
+
+
+
+.input-wrapper input[type="password"] {
+    padding-right: 45px;
+}
+
+input::-ms-reveal,
+input::-ms-clear {
+    display: none !important;
 }

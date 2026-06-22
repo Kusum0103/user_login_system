@@ -12,7 +12,13 @@ from decorators import login_required, api_login_required
 
 from auth import is_valid_email, check_password_strength
 
-from auth_queries import check_username_exists, register_user, verify_user_login, get_user_id_by_username, update_user_active_status, log_login_activity
+from auth_queries import check_username_exists, register_user, verify_user_login, get_user_id_by_username, update_user_active_status, log_login_activity , save_otp , is_user_verified , verify_otp_in_db, get_user_email, delete_user_account
+
+import random 
+
+from datetime import datetime , timedelta
+
+from mail_utils import send_otp_email
 
 from dashboard_queries import get_dashboard_stats, get_active_users
 
@@ -40,6 +46,21 @@ def parse_evaluation(evaluation_text):
         
     return score, status
 
+
+def send_new_otp(username, email , password):
+    otp_code = str(random.randint(100000, 999999))
+    expiry_time = datetime.now() + timedelta(minutes=5)
+    session['pending_user'] = {
+        'username': username,
+        'email': email,
+        'password': password,
+        'otp_code': otp_code,
+        'otp_expiry': expiry_time.isoformat()
+    }
+    send_otp_email(email, username, otp_code)
+    return otp_code
+
+
 @app.route('/')
 def home():
     if 'username' in session:
@@ -52,6 +73,15 @@ def register():
     email = request.form.get('email', '').strip()
     password = request.form.get('password', '')
     confirm_password = request.form.get('confirm_password', '')
+
+
+        # --- DEBUG PRINTS START ---
+    print("\n=== DEBUG REGISTRATION ===")
+    print(f"Username: '{username}'")
+    print(f"Email: '{email}'")
+    print(f"Password Length: {len(password)}")
+    print(f"Confirm Password Length: {len(confirm_password)}")
+    # --- DEBUG PRINTS END ---
 
 
     if not username or not email or not password or not confirm_password :
@@ -71,12 +101,19 @@ def register():
 
     if check_username_exists(username):
         return jsonify({'success': False, 'error': "Username already exists."}), 400
-        
-    if register_user(username, email, password):
-        return jsonify({'success': True, 'message': 'Registration Successful! You can Login Now'})
-    else:
-        return jsonify({'success': False, 'error': 'Registration failed due to a server error.'}), 500
-    
+
+    try:
+        send_new_otp(username, email, password)
+        return jsonify({
+            'success': True, 
+            'message': 'OTP sent to your email. Please verify to complete registration.', 
+            'username': username
+        })
+    except Exception as e:
+        print("Registration flow error:", e)
+        return jsonify({'success': False, 'error': 'Failed to process registration.'}), 500
+
+
 @app.route('/login',methods = ['POST'])
 def login():
     username = request.form.get('username','').strip()
@@ -88,6 +125,7 @@ def login():
     success, message = verify_user_login( username, password)
     if not success:
            return jsonify({'success': False, 'error': message}), 401
+
     user_id = get_user_id_by_username(username)       
     if not user_id:
         return jsonify({'success' : False , 'error' : 'User ID lookup failed.'}), 500
@@ -280,6 +318,75 @@ def logout():
         update_user_active_status(0, username=username)
     session.pop('username', None)
     return redirect(url_for('home'))
+
+
+@app.route('/verify-otp' , methods = ['POST'])
+def verify_otp():
+    username = request.form.get('username', '').strip()
+    otp_code = request.form.get('otp', '').strip()
+
+    if not username or not otp_code:
+        return jsonify({"success": False, "error": "Username and OTP are required"}), 400
+   
+    pending_user = session.get('pending_user')
+    if not pending_user or pending_user['username'] != username:
+        return jsonify({"success": False, "error": "Registration session expired. Please register again."}), 400
+        
+    # --- DEBUG OTP CHECK START ---
+    print(f"\n=== DEBUG OTP COMPARISON ===")
+    print(f"Session OTP: '{pending_user['otp_code']}' (Type: {type(pending_user['otp_code'])})")
+    print(f"Entered OTP: '{otp_code}' (Type: {type(otp_code)})")
+    # --- DEBUG OTP CHECK END ---
+
+    if pending_user['otp_code'] != otp_code:
+        return jsonify({"success": False, "error": "Invalid OTP code."}), 400
+        
+    expiry_time = datetime.fromisoformat(pending_user['otp_expiry'])
+    if datetime.now() > expiry_time:
+        return jsonify({"success": False, "error": "OTP has expired. Please register again."}), 400
+        
+    if register_user(username, pending_user['email'], pending_user['password']):
+        
+        session.pop('pending_user', None)
+        return jsonify({"success": True, "message": 'Email verified and registration completed successfully!'})
+    else:
+        return jsonify({"success": False, "error": "Registration failed due to server error."}), 500
+
+@app.route('/resend-otp',methods=['POST'])
+def resend_otp():
+
+
+    pending_user = session.get('pending_user')
+    if not pending_user:
+        return jsonify({"success": False, "error": "Registration session expired. Please register again."}), 400
+
+    username = pending_user['username']
+    email = pending_user['email']
+    password = pending_user['password']
+    
+
+    # if not username:
+    #     return jsonify({"success": False, "error": "Username is required"}), 400
+    
+    # email = get_user_email(username)
+    # if not email:
+    #     return jsonify({"success": False, "error": "User not found."}), 400
+
+    send_new_otp(username, email , password)
+    return jsonify({'success': True, 'message': 'New OTP has been sent to your email.'})
+
+
+@app.route('/delete-account' , methods = ['POST'])
+@login_required
+def delete_account():
+    username = session.get('username')
+    
+    if delete_user_account(username):
+        session.pop('username', None )
+        return jsonify({"success": True, "message": "Account deleted successfully."})
+    else:
+        return jsonify({"success": False, "error": "Failed to delete account."}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)

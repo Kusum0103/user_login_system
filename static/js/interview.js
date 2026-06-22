@@ -229,16 +229,22 @@ function confirmQuitInterview() {
 }
 
 let confirmCallback = null;
+let alertCallback = null;
 
-
-function showCustomAlert(message) {
+function showCustomAlert(message, callback = null) {
     document.getElementById("custom-alert-message").textContent = message;
+    alertCallback = callback;
     document.getElementById("custom-alert-modal").classList.remove("hidden");
 }
 
 
 function closeCustomAlert() {
     document.getElementById("custom-alert-modal").classList.add("hidden");
+
+    if (alertCallback){
+        alertCallback();
+    }
+    alertCallback = null;
 }
 
 
@@ -257,3 +263,27 @@ function closeCustomConfirm(isConfirmed) {
     confirmCallback = null;
 }
 
+
+function confirmDeleteAccount() {
+    showCustomConfirm("Are you sure you want to permanently delete your account? This action cannot be undone.", async () => {
+        try {
+            const response = await fetch("/delete-account", {
+                method: "POST"
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showCustomAlert("Your account has been deleted successfully. Redirecting to registration...", 
+                    setTimeout(() => {
+                    window.location.href = "/";
+                }, 2000));
+            } else {
+                showCustomAlert("Error: " + (data.error || "Failed to delete account."));
+            }
+        } catch (err) {
+            showCustomAlert("Network error. Please try again.");
+            console.error("Delete account error:", err);
+        }
+    });
+}

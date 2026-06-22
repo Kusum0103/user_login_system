@@ -18,7 +18,6 @@ def send_otp_email(email, username, otp):
         print("="*80 + "\n")
         return True
 
-    # Premium Styled HTML Email Template for OTP
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -118,7 +117,7 @@ def send_otp_email(email, username, otp):
     msg.attach(MIMEText(html_content, 'html'))
 
     try:
-        # SMTP Server connectivity
+     
         server = smtplib.SMTP(smtp_server, smtp_port)
         server.starttls()
         server.login(smtp_sender, smtp_password)
@@ -128,6 +127,5 @@ def send_otp_email(email, username, otp):
         return True
     except Exception as e:
         print(f"[MAIL-ERROR] Failed to send email to {email}: {e}")
-        # Fallback link console par output karke check karna
         print(f"[MAIL-BACKUP-OTP] Backup OTP code: {otp}")
         return False
