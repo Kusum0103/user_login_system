@@ -241,7 +241,7 @@ function showCustomAlert(message, callback = null) {
 function closeCustomAlert() {
     document.getElementById("custom-alert-modal").classList.add("hidden");
 
-    if (alertCallback){
+    if (alertCallback) {
         alertCallback();
     }
     alertCallback = null;
@@ -274,10 +274,10 @@ function confirmDeleteAccount() {
             const data = await response.json();
 
             if (data.success) {
-                showCustomAlert("Your account has been deleted successfully. Redirecting to registration...", 
+                showCustomAlert("Your account has been deleted successfully. Redirecting to registration...",
                     setTimeout(() => {
-                    window.location.href = "/";
-                }, 2000));
+                        window.location.href = "/";
+                    }, 2000));
             } else {
                 showCustomAlert("Error: " + (data.error || "Failed to delete account."));
             }
@@ -286,4 +286,44 @@ function confirmDeleteAccount() {
             console.error("Delete account error:", err);
         }
     });
+}
+
+
+// Start polling every 5 seconds
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.querySelector('.active-users-list')) {
+        updateActiveUsers();
+        setInterval(updateActiveUsers, 2000);
+    }
+});
+
+
+function updateActiveUsers() {
+    fetch('/api/active-users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+
+                const countEl = document.getElementById('active-users-count');
+                if (countEl) {
+                    countEl.textContent = data.active_users.length;
+                }
+
+
+                const listContainer = document.querySelector('.active-users-list');
+                if (listContainer) {
+                    listContainer.innerHTML = '';
+                    data.active_users.forEach(username => {
+                        const userItem = document.createElement('div');
+                        userItem.className = 'active-user-item';
+                        userItem.innerHTML = `
+                            <span class="active-dot"></span>
+                            <span class="active-username">${username}</span>
+                        `;
+                        listContainer.appendChild(userItem);
+                    });
+                }
+            }
+        })
+        .catch(err => console.error('Error fetching active users:', err));
 }

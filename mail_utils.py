@@ -129,3 +129,127 @@ def send_otp_email(email, username, otp):
         print(f"[MAIL-ERROR] Failed to send email to {email}: {e}")
         print(f"[MAIL-BACKUP-OTP] Backup OTP code: {otp}")
         return False
+
+
+def send_reset_link_email(email, username , reset_link):
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_sender = os.getenv("SMTP_SENDER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_sender or not smtp_password:
+        print("\n" + "="*80)
+        print(f"[DEV MODE] SMTP not configured in .env.")
+        print(f"PASSWORD RESET LINK FOR {username} ({email}): {reset_link}")
+        print("="*80 + "\n")
+        return True
+
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{
+                font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+                background-color: #f3f4f6;
+                margin: 0;
+                padding: 0;
+            }}
+            .email-container {{
+                max-width: 500px;
+                margin: 40px auto;
+                background: #ffffff;
+                border-radius: 20px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                overflow: hidden;
+                border: 1px solid #e5e7eb;
+            }}
+            .header-banner {{
+                background: linear-gradient(135deg, #dc2626, #f87171);
+                padding: 30px 20px;
+                text-align: center;
+                color: #ffffff;
+            }}
+            .header-banner h1 {{
+                margin: 0;
+                font-size: 22px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+            }}
+            .content-body {{
+                padding: 30px 25px;
+                color: #1e3a8a;
+                text-align: center;
+            }}
+            .content-body p {{
+                font-size: 15px;
+                line-height: 1.6;
+                margin-bottom: 20px;
+                text-align: left;
+            }}
+            .reset-button {{
+                background: #dc2626;
+                color: #ffffff !important;
+                text-decoration: none;
+                padding: 14px 24px;
+                border-radius: 12px;
+                font-weight: 600;
+                display: inline-block;
+                margin: 20px auto;
+                font-size: 16px;
+                box-shadow: 0 8px 16px rgba(220, 38, 38, 0.2);
+            }}
+            .expiry-note {{
+                font-size: 13px;
+                color: #4b5563;
+                font-weight: 500;
+                margin-top: 15px;
+            }}
+            .footer {{
+                background: #f9fafb;
+                padding: 20px;
+                text-align: center;
+                border-top: 1px solid #f3f4f6;
+                font-size: 12px;
+                color: rgba(30, 58, 138, 0.5);
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="header-banner">
+                <h1>Reset Your Password</h1>
+            </div>
+            <div class="content-body">
+                <p>Hello <strong>{username}</strong>,</p>
+                <p>We received a request to reset your password. Click the button below to set a new password. This link is valid for one-time use only:</p>
+                <a href="{reset_link}" class="reset-button" style="color: white;">Reset Password</a>
+                <div class="expiry-note">This link will expire in 10 minutes. If you did not request this, you can safely ignore this email.</div>
+            </div>
+            <div class="footer">
+                This is an automated message. Please do not reply directly to this email.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+    msg = MIMEMultipart()
+    msg['From'] = smtp_sender
+    msg['To'] = email
+    msg['Subject'] = "Reset your password - Mock Interview System"
+    msg.attach(MIMEText(html_content, 'html'))
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_sender, smtp_password)
+        server.sendmail(smtp_sender, email, msg.as_string())
+        server.quit()
+        print(f"[MAIL-SUCCESS] Password reset email successfully sent to {email}")
+        return True
+    except Exception as e:
+        print(f"[MAIL-ERROR] Failed to send reset email to {email}: {e}")
+        return False

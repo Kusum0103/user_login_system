@@ -29,7 +29,9 @@ def init_db():
             is_active TINYINT(1) DEFAULT 0,
             is_verified TINYINT(1) DEFAULT 0,
             otp_code VARCHAR(6) DEFAULT NULL,
-            otp_expiry TIMESTAMP DEFAULT NULL
+            otp_expiry TIMESTAMP DEFAULT NULL,
+            current_session_token VARCHAR(255) DEFAULT NULL,
+            last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """)
 
@@ -45,6 +47,19 @@ def init_db():
 
         try:
             cursor.execute("ALTER TABLE users ADD COLUMN otp_expiry TIMESTAMP DEFAULT NULL")
+        except mysql.connector.Error:
+            pass
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN verification_token VARCHAR(255) DEFAULT NULL")
+        except mysql.connector.Error:
+            pass
+            
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN current_session_token VARCHAR(255) DEFAULT NULL")
+        except mysql.connector.Error:
+            pass
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
         except mysql.connector.Error:
             pass
 

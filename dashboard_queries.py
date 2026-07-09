@@ -44,7 +44,7 @@ def get_active_users():
         return[]
     try:
         cursor = db.cursor()
-        query = "SELECT username FROM users WHERE is_active = 1"
+        query = "SELECT username FROM users WHERE last_active >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)"
         cursor.execute(query)
         active_users = [row[0] for row in cursor.fetchall()]
         return active_users

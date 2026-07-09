@@ -1,28 +1,33 @@
-from flask import Flask, render_template , request, jsonify, session, redirect, url_for
+# Standard Library Imports
+from datetime import datetime, timedelta
 import os
-import json
+import random
 import re
+import threading
+import uuid
+
+# Third-Party Imports
 from dotenv import load_dotenv
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from groq import Groq
 
-
+# Database Initialization
 from database import init_db
 
-from decorators import login_required, api_login_required
-
-from auth import is_valid_email, check_password_strength
-
-from auth_queries import check_username_exists, register_user, verify_user_login, get_user_id_by_username, update_user_active_status, log_login_activity , save_otp , is_user_verified , verify_otp_in_db, get_user_email, delete_user_account
-
-import random 
-
-from datetime import datetime , timedelta
-
-from mail_utils import send_otp_email
-
+# Custom Application Modules
+from auth import is_valid_email, check_password_strength, generate_reset_token, hash_password
+from auth_queries import (
+    check_username_exists, register_user, verify_user_login, get_user_id_by_username,
+    update_user_active_status, log_login_activity, save_otp, is_user_verified,
+    verify_otp_in_db, get_user_email, delete_user_account, get_user_by_email,
+    save_password_reset_token, verify_reset_token, update_password_and_clear_token,
+    update_user_session_token, update_user_heartbeat, clear_user_session
+)
 from dashboard_queries import get_dashboard_stats, get_active_users
-
+from decorators import login_required, api_login_required
 from interview_queries import save_interview, get_interview_history
+from mail_utils import send_otp_email, send_reset_link_email
+
 
 
 load_dotenv()
@@ -57,7 +62,9 @@ def send_new_otp(username, email , password):
         'otp_code': otp_code,
         'otp_expiry': expiry_time.isoformat()
     }
-    send_otp_email(email, username, otp_code)
+    
+    threading.Thread(target=send_otp_email, args=(email, username, otp_code)).start()
+
     return otp_code
 
 
@@ -75,7 +82,7 @@ def register():
     confirm_password = request.form.get('confirm_password', '')
 
 
-        # --- DEBUG PRINTS START ---
+     # --- DEBUG PRINTS START ---
     print("\n=== DEBUG REGISTRATION ===")
     print(f"Username: '{username}'")
     print(f"Email: '{email}'")
@@ -91,7 +98,7 @@ def register():
 
 
 
-    is_strong,password_strength_message = check_password_strength(password)
+    is_strong, password_strength_message = check_password_strength(password)
     if not is_strong:
         return jsonify({'success' : False, 'error': password_strength_message}), 400
 
@@ -165,7 +172,14 @@ def login():
     device_info = f"{browser} on {os_name}"
     
     log_login_activity(user_id, device_info)
+   
+
+ 
+    session_token = uuid.uuid4().hex
+    update_user_session_token(username,session_token)
+    update_user_heartbeat(username)
     session['username'] = username
+    session['session_token'] = session_token   
     
     return jsonify({'success': True, 'message': message})
             
@@ -189,6 +203,13 @@ def dashboard():
         login_count_24h=stats['login_count_24h'],
         active_users=active_users
     )
+
+
+@app.route('/api/active-users')
+@api_login_required
+def api_active_users():
+    active_users = get_active_users()
+    return jsonify({'success': True, 'active_users': active_users})
 
 
 @app.route('/generate-question' , methods = ['POST'])   
@@ -315,8 +336,9 @@ def get_history():
 def logout():
     if 'username' in session:
         username = session['username']
-        update_user_active_status(0, username=username)
-    session.pop('username', None)
+        clear_user_session(username)
+        session.pop('username', None)
+        session.pop('session_token', None)
     return redirect(url_for('home'))
 
 
@@ -365,13 +387,6 @@ def resend_otp():
     password = pending_user['password']
     
 
-    # if not username:
-    #     return jsonify({"success": False, "error": "Username is required"}), 400
-    
-    # email = get_user_email(username)
-    # if not email:
-    #     return jsonify({"success": False, "error": "User not found."}), 400
-
     send_new_otp(username, email , password)
     return jsonify({'success': True, 'message': 'New OTP has been sent to your email.'})
 
@@ -386,6 +401,78 @@ def delete_account():
         return jsonify({"success": True, "message": "Account deleted successfully."})
     else:
         return jsonify({"success": False, "error": "Failed to delete account."}), 500
+
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    username = request.form.get('username', '').strip()
+    if not username:
+        return jsonify({'success': False, 'error': 'Username is required.'}), 400
+
+    # Username se registered email pata karenge
+    email = get_user_email(username)
+    if not email:
+        return jsonify({'success': False, 'error': 'Username not registered.'}), 404
+
+    token = generate_reset_token()
+    expiry_time = datetime.now() + timedelta(minutes=10) 
+
+    # Token ko username ke base par database me save karenge
+    if save_password_reset_token(username, token, expiry_time):
+        reset_link = f"http://localhost:5000/reset-password?token={token}"
+        threading.Thread(target=send_reset_link_email, args=(email, username, reset_link)).start()
+        return jsonify({'success': True, 'message': 'Password reset link has been sent to your registered email.'})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to save reset token.'}), 500
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+   
+    if request.method == 'GET':
+        token = request.args.get('token', '')
+        if not token:
+            return "Reset token is missing.", 400
+        
+        result = verify_reset_token(token)
+        if not result:
+            return "This password reset link is invalid, expired, or has already been used.", 400
+        
+        username, email = result
+        return render_template('reset_password.html', token=token)
+
+
+    elif request.method == 'POST':
+        token = request.form.get('token', '')
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not token or not password or not confirm_password:
+            return jsonify({'success': False, 'error': 'All fields are required.'}), 400
+
+        result = verify_reset_token(token)
+        if not result:
+            return jsonify({'success': False, 'error': 'Link is invalid or has expired.'}), 400
+
+        username, email = result
+
+        is_strong, password_strength_message = check_password_strength(password)
+        if not is_strong:
+            return jsonify({'success': False, 'error': password_strength_message}), 400
+
+        if password != confirm_password:
+            return jsonify({'success': False, 'error': 'Passwords do not match.'}), 400
+
+        hashed_password = hash_password(password)
+
+        
+        if update_password_and_clear_token(username, hashed_password):
+            return jsonify({'success': True, 'message': 'Password has been successfully updated.'})
+        else:
+            return jsonify({'success': False, 'error': 'Failed to update password.'}), 500
+
+@app.route('/api/ping', methods = ['POST'])
+@api_login_required
+def api_ping():
+    return jsonify({'success' : True , 'message' : 'pong'})
 
 
 if __name__ == "__main__":

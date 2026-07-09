@@ -4,25 +4,37 @@ function switchTab(mode) {
     const loginForm = document.getElementById("login-form");
     const registerForm = document.getElementById("register-form");
     const verifyForm = document.getElementById("verify-form");
+    const forgotForm = document.getElementById("forgot-password-form");
     const messageBox = document.getElementById("message-box");
 
-    messageBox.style.display = "none";
 
-    if (verifyForm) {
-        verifyForm.classList.add("hidden");
-    }
 
+    if (messageBox) messageBox.style.display = "none";
+
+    if (messageBox) messageBox.style.display = "none";
+    if (verifyForm) verifyForm.classList.add("hidden");
+    if (forgotForm) forgotForm.classList.add("hidden");
     if (mode === "login") {
-        loginTab.classList.add("active");
-        registerTab.classList.remove("active");
-        loginForm.classList.remove("hidden");
-        registerForm.classList.add("hidden");
-    } else {
-        registerTab.classList.add("active");
-        loginTab.classList.remove("active");
-        registerForm.classList.remove("hidden");
-        loginForm.classList.add("hidden");
+        if (loginTab) loginTab.classList.add("active");
+        if (registerTab) registerTab.classList.remove("active");
+        if (loginForm) loginForm.classList.remove("hidden");
+        if (registerForm) registerForm.classList.add("hidden");
+    } else if (mode === "register") {
+        if (registerTab) registerTab.classList.add("active");
+        if (loginTab) loginTab.classList.remove("active");
+        if (registerForm) registerForm.classList.remove("hidden");
+        if (loginForm) loginForm.classList.add("hidden");
+    } else if (mode === "forgot") {
+        if (loginTab) loginTab.classList.remove("active");
+        if (registerTab) registerTab.classList.remove("active");
+        if (loginForm) loginForm.classList.add("hidden");
+        if (registerForm) registerForm.classList.add("hidden");
+        if (forgotForm) forgotForm.classList.remove("hidden");
     }
+}
+function showForgotPasswordForm(event) {
+    if (event) event.preventDefault();
+    switchTab("forgot");
 }
 
 
@@ -35,6 +47,13 @@ async function handleAuth(event, endpoint) {
 
     messageBox.style.display = "none";
     messageBox.className = "message-box";
+
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = (endpoint === '/register') ? "Registering & Sending OTP..." : "Logging in...";
+
 
     try {
         const response = await fetch(endpoint, {
@@ -56,7 +75,7 @@ async function handleAuth(event, endpoint) {
             } else {
                 setTimeout(() => {
                     form.reset();
-                
+
                     document.getElementById("verify-username").value = data.username;
                     document.getElementById("register-form").classList.add("hidden");
                     document.getElementById("verify-form").classList.remove("hidden");
@@ -65,33 +84,39 @@ async function handleAuth(event, endpoint) {
             }
         } else {
 
-            if (endpoint === '/login' && data.needs_verification){
-              
+            if (endpoint === '/login' && data.needs_verification) {
+
                 messageBox.textContent = data.error || "Something went wrong!! Try again";
                 messageBox.classList.add("error");
                 messageBox.style.display = "block";
 
 
-                setTimeout(()=>{
+                setTimeout(() => {
                     form.reset();
                     document.getElementById("verify-username").value = data.username;
                     document.getElementById("login-form").classList.add("hidden");
                     document.getElementById("verify-form").classList.remove("hidden");
-                },2000);
+                }, 2000);
             } else {
                 messageBox.textContent = data.error || "Something went wrong!! Try again";
                 messageBox.classList.add("error");
                 messageBox.style.display = "block";
             }
-                    
+
         }
-        
+
     } catch (error) {
         messageBox.textContent = "Could not connect to the server. Please check your internet connection.";
         messageBox.classList.add("error");
         messageBox.style.display = "block";
         console.error("Error during authentication:", error);
     }
+    finally {
+
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+
 }
 
 
@@ -115,7 +140,7 @@ async function handleVerifyOTP(event) {
             messageBox.textContent = data.message;
             messageBox.classList.add("success");
             messageBox.style.display = "block";
-            
+
             // Success hone baad login tab par redirect karna
             setTimeout(() => {
                 form.reset();
@@ -153,7 +178,7 @@ async function handleResendOTP(event) {
             body: formData
         });
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             messageBox.textContent = data.message;
             messageBox.classList.add("success");
@@ -175,7 +200,7 @@ async function handleResendOTP(event) {
 function togglePasswordVisibility(inputId, element) {
     const input = document.getElementById(inputId);
     const icon = element.querySelector('i');
-    
+
     if (input.type === "password") {
         input.type = "text";
         icon.classList.remove("fa-eye");
@@ -184,6 +209,98 @@ function togglePasswordVisibility(inputId, element) {
         input.type = "password";
         icon.classList.remove("fa-eye-slash");
         icon.classList.add("fa-eye");
-  
+
+    }
+}
+
+
+async function handleForgotPassword(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const messageBox = document.getElementById("message-box");
+
+    if (messageBox) {
+        messageBox.style.display = "none";
+        messageBox.className = "message-box";
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "Sending Reset Link...";
+
+    try {
+        const response = await fetch('/forgot-password', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            messageBox.textContent = data.message;
+            messageBox.classList.add("success");
+            messageBox.style.display = "block";
+            form.reset();
+        } else {
+            messageBox.textContent = data.error || "Failed to process request.";
+            messageBox.classList.add("error");
+            messageBox.style.display = "block";
+        }
+    } catch (error) {
+        messageBox.textContent = "Could not connect to the server.";
+        messageBox.classList.add("error");
+        messageBox.style.display = "block";
+        console.error("Forgot password error:", error);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+async function handleResetPassword(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const messageBox = document.getElementById("message-box");
+
+    if (messageBox) {
+        messageBox.style.display = "none";
+        messageBox.className = "message-box";
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = "Resetting Password...";
+
+    try {
+        const response = await fetch('/reset-password', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            messageBox.textContent = data.message + " Redirecting to login...";
+            messageBox.classList.add("success");
+            messageBox.style.display = "block";
+            form.reset();
+            setTimeout(() => {
+                window.location.href = "/";
+            }, 2000);
+        } else {
+            messageBox.textContent = data.error || "Password reset failed.";
+            messageBox.classList.add("error");
+            messageBox.style.display = "block";
+        }
+    } catch (error) {
+        messageBox.textContent = "Could not connect to the server.";
+        messageBox.classList.add("error");
+        messageBox.style.display = "block";
+        console.error("Reset password error:", error);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 }

@@ -8,10 +8,10 @@
     <meta name="description" content="Secure login and registration system.">
 
     <link rel="stylesheet" href="../static/css/style.css">
-    
+
     <script src="../static/js/auth.js" defer></script>
 
-  
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 
@@ -45,12 +45,44 @@
                             <input type="password" id="login-password" name="password" required
                                 placeholder="Enter your password">
 
-                            <span class="password-toggle" onclick="togglePasswordVisibility('login-password', this)"><i class="fa-regular fa-eye"></i>
-                            </span> 
+                            <span class="password-toggle" onclick="togglePasswordVisibility('login-password', this)"><i
+                                    class="fa-regular fa-eye"></i>
+                            </span>
                         </div>
+
+                        <div class="forgot-link-container"
+                            style="text-align: right; margin-top: 10px; margin-bottom: 0px; font-size: 0.85rem;">
+                            <a href="#" onclick="showForgotPasswordForm(event)"
+                                style="color: #2563eb; text-decoration: none; font-weight: 600;">Forgot Password?</a>
+                        </div>
+
                     </div>
                     <button type="submit" class="submit-btn">Access Account</button>
                 </form>
+
+
+
+                <!-- Forgot Password Form -->
+                <form id="forgot-password-form" class="hidden" onsubmit="handleForgotPassword(event)">
+                    <div class="info-message" style="margin-bottom: 15px; color: #4b5563; font-size: 0.9rem;">
+                        Enter your username. We will send a secure link to your registered email address.
+                    </div>
+                    <div class="form-group">
+                        <label for="forgot-username">Username</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="forgot-username" name="username" required
+                                placeholder="Enter your username">
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">Send Reset Link</button>
+
+                    <div class="back-to-login-container"
+                        style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #4b5563;">
+                        Remembered password? <a href="#" onclick="switchTab('login')"
+                            style="color: #2563eb; text-decoration: none; font-weight: 600;">Back to Login</a>
+                    </div>
+                </form>
+
 
                 <!-- Registration Form -->
                 <form id="register-form" class="hidden" onsubmit="handleAuth(event, '/register')">
@@ -74,7 +106,9 @@
                             <input type="password" id="register-password" name="password" required
                                 placeholder="Min. 8 chars, 1 uppercase, 1 special">
 
-                            <span class="password-toggle" onclick="togglePasswordVisibility('register-password', this)"><i class="fa-regular fa-eye"></i>
+                            <span class="password-toggle"
+                                onclick="togglePasswordVisibility('register-password', this)"><i
+                                    class="fa-regular fa-eye"></i>
                             </span>
                         </div>
                     </div>
@@ -84,7 +118,9 @@
                             <input type="password" id="register-confirm" name="confirm_password" required
                                 placeholder="Repeat your password">
 
-                            <span class="password-toggle" onclick="togglePasswordVisibility('register-confirm', this)"><i class="fa-regular fa-eye"></i>
+                            <span class="password-toggle"
+                                onclick="togglePasswordVisibility('register-confirm', this)"><i
+                                    class="fa-regular fa-eye"></i>
                             </span>
                         </div>
                     </div>
@@ -97,7 +133,7 @@
                         Please enter the 6-digit verification code sent to your email.
                     </div>
                     <input type="hidden" id="verify-username" name="username">
-                    
+
                     <div class="form-group">
                         <label for="otp-code">OTP Code</label>
                         <div class="input-wrapper">
@@ -106,12 +142,14 @@
                         </div>
                     </div>
                     <button type="submit" class="submit-btn">Verify Account</button>
-                    
-                    <div class="resend-text" style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #4b5563;">
-                        Didn't receive the code? <a href="#" onclick="handleResendOTP(event)" style="color: #2563eb; text-decoration: none; font-weight: 600;">Resend OTP</a>
+
+                    <div class="resend-text"
+                        style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #4b5563;">
+                        Didn't receive the code? <a href="#" onclick="handleResendOTP(event)"
+                            style="color: #2563eb; text-decoration: none; font-weight: 600;">Resend OTP</a>
                     </div>
                 </form>
-   
+
             </div>
         </div>
     </div>

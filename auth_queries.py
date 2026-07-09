@@ -237,3 +237,160 @@ def delete_user_account(username):
         cursor.close()
         db.close()
         
+from datetime import datetime
+
+def get_user_by_email(email):
+    db = get_db_connection()
+    if not db :
+        return None
+    try:
+        cursor =db.cursor()
+        query = "SELECT username FROM users WHERE email = %s"
+        cursor.execute(query , (email,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except mysql.connector.Error as e:
+        print("Database error in get_user_by_email:", e)
+        return None
+    finally:
+        cursor.close()
+        db.close()
+
+def save_password_reset_token(username, token, expiry_time):
+    db = get_db_connection()
+    if not db:
+        return False
+    try:
+        cursor = db.cursor()
+        query = """
+        UPDATE users 
+        SET verification_token = %s, otp_expiry = %s 
+        WHERE username = %s
+        """
+        cursor.execute(query, (token, expiry_time, username))
+        db.commit()
+        return True
+    except mysql.connector.Error as e:
+        print("Database error in save_password_reset_token:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+
+def verify_reset_token(token):
+    db = get_db_connection()
+    if not db :
+        return False , "Database connection failed"
+    try:
+        cursor = db.cursor()
+        query = "SELECT username,email ,otp_expiry FROM users WHERE verification_token = %s"
+        cursor.execute(query , (token,))
+        result = cursor.fetchone()
+        if result:
+            username,email , expiry = result[0], result[1], result[2]
+
+            if datetime.now() > expiry:
+                return None
+
+            return username,email
+
+        return None    
+    except mysql.connector.Error as e:
+        print("Database error in verify_reset_token:", e)
+        return None
+
+    finally:
+        cursor.close()
+        db.close()
+
+
+def update_password_and_clear_token(username, hashed_password):
+    db = get_db_connection()
+    if not db:
+        return False
+    try:
+        cursor = db.cursor()
+        query = "UPDATE users SET password = %s, verification_token = NULL, otp_expiry = NULL WHERE username = %s"
+        cursor.execute(query, (hashed_password, username))
+        db.commit()
+        return True
+    except mysql.connector.Error as e:
+        print("Database error in update_password_and_clear_token:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+
+def update_user_session_token(username, token):
+    db = get_db_connection()
+    if not db:
+        return False
+    try:
+        cursor = db.cursor()
+        # Database mein token ko update karne ki SQL query
+        query = "UPDATE users SET current_session_token = %s WHERE username = %s"
+        cursor.execute(query, (token, username))
+        db.commit()
+        return True
+    except mysql.connector.Error as e:
+        print("Database error in update_user_session_token:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+
+def get_user_session_token(username):
+    db = get_db_connection()
+    if not db:
+        return None
+    try:
+        cursor = db.cursor()
+        query = "SELECT current_session_token FROM users Where username = %s"
+        cursor.execute(query , (username ,))
+        row = cursor.fetchone()
+    
+        return row[0] if row else None
+    except mysql.connector.Error as e:
+        print("Database error in get_user_session_token:", e)
+        return None
+    finally:
+        cursor.close()
+        db.close()
+
+
+def update_user_heartbeat(username):
+    db = get_db_connection()
+    if not db :
+        return False 
+    try:
+        cursor = db.cursor()
+        query = """UPDATE users SET last_active = NOW() WHERE username = %s"""
+        cursor.execute(query , (username,))
+        db.commit()
+        return True 
+    except mysql.connector.Error as e:
+        print("Database error in update_user_heartbeat:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+def clear_user_session(username):
+    db = get_db_connection()
+    if not db:
+        return False
+    try:
+        cursor = db.cursor()
+        query = """UPDATE users SET current_session_token = NULL, last_active = '1970-01-01 00:00:01', is_active = 0 WHERE username = %s"""
+        cursor.execute(query, (username,))
+        db.commit()
+        return True
+    except mysql.connector.Error as e:
+        print("Database error in clear_user_session:", e)
+        return False
+    finally:
+        cursor.close()
+        db.close()

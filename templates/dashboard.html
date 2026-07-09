@@ -10,6 +10,10 @@
 
     <script src="../static/js/interview.js" defer></script>
     <script src="../static/js/history.js" defer></script>
+    <script src="../static/js/heartbeat.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
 
 </head>
 
@@ -46,23 +50,28 @@
     <!-- Floating Popup Details Modal -->
     {% include 'partials/history_modal.html' %}
 
-    
-            <!-- Custom Center Alert Modal -->
+
+    <!-- Custom Center Alert Modal -->
     <div id="custom-alert-modal" class="modal-overlay hidden">
         <div class="modal-card" style="max-width: 420px; text-align: center; gap: 16px;">
             <h2 class="modal-heading" style="color: var(--error-color);">System Alert</h2>
             <p id="custom-alert-message" style="color: var(--text-primary); line-height: 1.5; font-size: 0.95rem;"></p>
-            <button class="submit-btn" style="margin-top: 10px; width: auto; padding: 12px 30px; align-self: center;" onclick="closeCustomAlert()">OK</button>
+            <button class="submit-btn" style="margin-top: 10px; width: auto; padding: 12px 30px; align-self: center;"
+                onclick="closeCustomAlert()">OK</button>
         </div>
     </div>
     <!-- Custom Center Confirm Modal -->
     <div id="custom-confirm-modal" class="modal-overlay hidden">
         <div class="modal-card" style="max-width: 420px; text-align: center; gap: 16px;">
             <h2 class="modal-heading" style="color: var(--primary-color);">Confirm Action</h2>
-            <p id="custom-confirm-message" style="color: var(--text-primary); line-height: 1.5; font-size: 0.95rem;"></p>
+            <p id="custom-confirm-message" style="color: var(--text-primary); line-height: 1.5; font-size: 0.95rem;">
+            </p>
             <div style="display: flex; gap: 12px; margin-top: 10px; width: 100%; justify-content: center;">
-                <button class="submit-btn" style="margin-top: 0; background: var(--text-secondary); width: auto; padding: 12px 25px;" onclick="closeCustomConfirm(false)">Cancel</button>
-                <button class="submit-btn" style="margin-top: 0; width: auto; padding: 12px 25px;" onclick="closeCustomConfirm(true)">OK</button>
+                <button class="submit-btn"
+                    style="margin-top: 0; background: var(--text-secondary); width: auto; padding: 12px 25px;"
+                    onclick="closeCustomConfirm(false)">Cancel</button>
+                <button class="submit-btn" style="margin-top: 0; width: auto; padding: 12px 25px;"
+                    onclick="closeCustomConfirm(true)">OK</button>
             </div>
         </div>
     </div>
